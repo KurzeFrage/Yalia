@@ -268,6 +268,15 @@
           </div>
         </div>
       </div>
+
+      <!-- Alternative Screen -->
+      <div id="alternative-screen" class="screen" style="display: none;">
+          <h1>Schade! 😢</h1>
+          <p>Du hast dich wirklich gegen mich entschieden...</p>
+          <p>Aber ich respektiere deine Entscheidung!</p>
+          <p>Falls du es dir anders überlegst, lade die Seite einfach neu.</p>
+          <button class="btn" onclick="window.location.reload()">Neu starten</button>
+      </div>
     </div>
 
     <script>
@@ -325,10 +334,10 @@
             createHearts();
           });
 
-        // No button event - it runs away
+        // No button event - it teleports when clicked
         document
           .getElementById("noBtn")
-          .addEventListener("mouseover", function () {
+          .addEventListener("click", function () {
             const maxX = window.innerWidth - 100;
             const maxY = window.innerHeight - 50;
             const randomX = Math.random() * maxX;
