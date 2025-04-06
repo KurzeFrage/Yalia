@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eine besondere Reise</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #f8bbd0, #bbdefb);
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #333;
+      }
+      .game-container {
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        width: 90%;
+        max-width: 600px;
+        padding: 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      h1 {
+        color: #e91e63;
+        margin-bottom: 20px;
+      }
+      p {
+        font-size: 18px;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+      .btn {
+        background-color: #e91e63;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 25px;
+        font-size: 16px;
+        cursor: pointer;
+        margin: 10px;
+        transition: all 0.3s ease;
+      }
+      .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+      .btn-option {
+        background-color: #f8bbd0;
+        color: #333;
+      }
+      .screen {
+        display: none;
+      }
+      .active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+      }
+      .options {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin: 20px 0;
+      }
+      .hidden-message {
+        font-size: 20px;
+        background-color: #f8bbd0;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+      .fireworks {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+      }
+      .heart {
+        position: absolute;
+        background-color: #e91e63;
+        width: 30px;
+        height: 27px;
+        transform: rotate(-45deg);
+        animation: heartFall linear forwards;
+      }
+      .heart:before,
+      .heart:after {
+        content: "";
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        background-color: #e91e63;
+        border-radius: 50%;
+      }
+      .heart:before {
+        top: -15px;
+        left: 0;
+      }
+      .heart:after {
+        top: 0;
+        left: 15px;
+      }
+      @keyframes heartFall {
+        to {
+          transform: translateY(1000px) rotate(-45deg);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .final-message {
+        font-size: 24px;
+        font-weight: bold;
+        color: #e91e63;
+        margin: 30px 0;
+      }
+      #progress-bar {
+        background-color: #f1f1f1;
+        border-radius: 20px;
+        height: 10px;
+        width: 100%;
+        margin: 20px 0;
+      }
+      #progress {
+        background-color: #e91e63;
+        border-radius: 20px;
+        height: 10px;
+        width: 0%;
+        transition: width 0.5s ease;
+      }
+      .message-form {
+        margin-top: 30px;
+      }
+      textarea {
+        width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        resize: vertical;
+        height: 100px;
+        margin-bottom: 10px;
+      }
+      .image-container {
+        margin: 20px 0;
+      }
+      .image-container img {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div id="progress-bar">
+        <div id="progress"></div>
+      </div>
+
+      <!-- Start Screen -->
+      <div id="start-screen" class="screen active">
+        <h1>Eine besondere Reise</h1>
+        <p>
+          Ich habe etwas Wichtiges, das ich dir sagen möchte. Aber zuerst... ein
+          kleines Quiz! 🎮
+        </p>
+        <p>Bist du bereit für ein Abenteuer?</p>
+        <button class="btn" id="start-button">Los geht's!</button>
+      </div>
+
+      <!-- Quiz Screen 1 -->
+      <div id="quiz1" class="screen">
+        <h1>Frage 1</h1>
+        <p>Was ist mein Lieblingsessen?</p>
+        <div class="options">
+          <button class="btn btn-option wrong-answer">Pizza</button>
+          <button class="btn btn-option wrong-answer">Sushi</button>
+          <button class="btn btn-option correct-answer" data-question="1">
+            Pasta
+          </button>
+          <button class="btn btn-option wrong-answer">Burger</button>
+        </div>
+        <p class="hidden-message" id="message1" style="display: none">
+          Ich liebe es, mit dir zusammen zu essen!
+        </p>
+      </div>
+
+      <!-- Quiz Screen 2 -->
+      <div id="quiz2" class="screen">
+        <h1>Frage 2</h1>
+        <p>Wo würde ich am liebsten mit dir hingehen?</p>
+        <div class="options">
+          <button class="btn btn-option wrong-answer">Kino</button>
+          <button class="btn btn-option correct-answer" data-question="2">
+            Strand
+          </button>
+          <button class="btn btn-option wrong-answer">Restaurant</button>
+          <button class="btn btn-option wrong-answer">Konzert</button>
+        </div>
+        <p class="hidden-message" id="message2" style="display: none">
+          Mit dir würde ich überall hingehen!
+        </p>
+      </div>
+
+      <!-- Quiz Screen 3 (Replaced Memory Game) -->
+      <div id="quiz3" class="screen">
+        <h1>Frage 3</h1>
+        <p>Was macht mich am glücklichsten?</p>
+        <div class="options">
+          <button class="btn btn-option wrong-answer">
+            Erfolg bei der Arbeit
+          </button>
+          <button class="btn btn-option wrong-answer">Ein sonniger Tag</button>
+          <button class="btn btn-option wrong-answer">Ein gutes Buch</button>
+          <button class="btn btn-option correct-answer" data-question="3">
+            Zeit mit dir verbringen
+          </button>
+        </div>
+        <p class="hidden-message" id="message3" style="display: none">
+          Wir passen perfekt zusammen!
+        </p>
+      </div>
+
+      <!-- Final Screen -->
+      <div id="final-screen" class="screen">
+        <h1>Geschafft! 🎉</h1>
+        <p>Du hast alle Herausforderungen gemeistert!</p>
+        <p>Und jetzt zu meiner wichtigen Frage...</p>
+        <p class="final-message">Willst du mit mir zusammen sein?</p>
+        <button class="btn" id="yesBtn">Ja ❤️</button>
+        <button class="btn btn-option" id="noBtn">Nein</button>
+
+        <div id="celebration" class="fireworks" style="display: none"></div>
+
+        <div id="success-message" style="display: none">
+          <h1>❤️ Juhu! ❤️</h1>
+          <p>Du machst mich zum glücklichsten Menschen auf der Welt!</p>
+          <div class="message-form">
+            <p>Möchtest du mir etwas sagen?</p>
+            <form action="https://formspree.io/f/manepzdl" method="POST">
+              <textarea
+                name="message"
+                placeholder="Schreibe hier deine Nachricht..."
+                required
+              ></textarea>
+              <input
+                type="hidden"
+                name="_subject"
+                value="Liebesbotschaft von deiner besonderen Reise"
+              />
+              <button type="submit" class="btn">Senden</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Game state variables
+      let currentScreen = 0;
+      const screens = [
+        "start-screen",
+        "quiz1",
+        "quiz2",
+        "quiz3",
+        "final-screen",
+      ];
+      let correctAnswers = 0;
+
+      // Initialize the game when the document is loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        // Start button event
+        document
+          .getElementById("start-button")
+          .addEventListener("click", function () {
+            showScreen(1);
+            updateProgress(25);
+          });
+
+        // Set up wrong answer buttons
+        document.querySelectorAll(".wrong-answer").forEach((button) => {
+          button.addEventListener("click", function () {
+            alert("Nicht ganz... Versuch's nochmal! 😉");
+          });
+        });
+
+        // Set up correct answer buttons
+        document.querySelectorAll(".correct-answer").forEach((button) => {
+          button.addEventListener("click", function () {
+            const questionNum = this.dataset.question;
+            document.getElementById("message" + questionNum).style.display =
+              "block";
+            correctAnswers++;
+
+            setTimeout(() => {
+              showScreen(parseInt(questionNum) + 1);
+              updateProgress((parseInt(questionNum) + 1) * 25);
+            }, 1500);
+          });
+        });
+
+        // Yes button event
+        document
+          .getElementById("yesBtn")
+          .addEventListener("click", function () {
+            document.getElementById("celebration").style.display = "block";
+            document.getElementById("success-message").style.display = "block";
+            document.getElementById("yesBtn").style.display = "none";
+            document.getElementById("noBtn").style.display = "none";
+            createHearts();
+          });
+
+        // No button event - it runs away
+        document
+          .getElementById("noBtn")
+          .addEventListener("mouseover", function () {
+            const maxX = window.innerWidth - 100;
+            const maxY = window.innerHeight - 50;
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
+
+            this.style.position = "absolute";
+            this.style.left = randomX + "px";
+            this.style.top = randomY + "px";
+          });
+
+        // Send message button
+        document
+          .getElementById("send-message")
+          .addEventListener("click", function () {
+            alert("Deine Nachricht wurde mit viel Liebe empfangen! ❤️");
+          });
+      });
+
+      // Show a specific screen
+      function showScreen(index) {
+        document
+          .getElementById(screens[currentScreen])
+          .classList.remove("active");
+        currentScreen = index;
+        document.getElementById(screens[currentScreen]).classList.add("active");
+      }
+
+      // Update progress bar
+      function updateProgress(percentage) {
+        document.getElementById("progress").style.width = percentage + "%";
+      }
+
+      // Create falling hearts animation
+      function createHearts() {
+        for (let i = 0; i < 50; i++) {
+          setTimeout(() => {
+            const heart = document.createElement("div");
+            heart.classList.add("heart");
+            heart.style.left = Math.random() * 100 + "%";
+            heart.style.animationDuration = Math.random() * 3 + 2 + "s";
+            document.getElementById("celebration").appendChild(heart);
+
+            setTimeout(() => {
+              heart.remove();
+            }, 5000);
+          }, i * 100);
+        }
+      }
+    </script>
+  </body>
+</html>
