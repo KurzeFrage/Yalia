@@ -141,6 +141,17 @@
         }
       }
 
+      @keyframes slideOut {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-30px);
+        }
+      }
+
       .options {
         display: flex;
         flex-wrap: wrap;
@@ -429,6 +440,31 @@
           transform: translateX(5px);
         }
       }
+      
+      .form-message {
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 10px;
+        font-weight: bold;
+        display: none;
+      }
+      
+      .form-success {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #a5d6a7;
+      }
+      
+      .form-error {
+        background-color: #ffebee;
+        color: #c62828;
+        border: 1px solid #ef9a9a;
+      }
+      
+      .btn-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     </style>
   </head>
   <body>
@@ -482,7 +518,7 @@
         </p>
       </div>
 
-      <!-- Quiz Screen 3 (Replaced Memory Game) -->
+      <!-- Quiz Screen 3 -->
       <div id="quiz3" class="screen">
         <h1>Frage 3</h1>
         <p>Was macht mich am glücklichsten?</p>
@@ -507,6 +543,7 @@
         <p>Du hast alle Herausforderungen gemeistert!</p>
         <p>Und jetzt zu meiner wichtigen Frage...</p>
         <p class="final-message">Willst du mit mir zusammen sein?</p>
+
         <button class="btn" id="yesBtn">Ja ❤️</button>
         <button class="btn btn-option" id="noBtn">Nein</button>
 
@@ -522,79 +559,28 @@
           <p>Du machst mich zum glücklichsten Menschen auf der Welt!</p>
           <div class="message-form">
             <p>Möchtest du mir etwas sagen?</p>
-            <form
-              id="messageForm"
-              action="https://formspree.io/f/manepzdl"
-              method="POST"
-            >
+            <div id="custom-form">
               <textarea
-                name="message"
+                id="message-text"
                 placeholder="Schreibe hier deine Nachricht..."
                 required
               ></textarea>
-              <input
-                type="hidden"
-                name="_subject"
-                value="Liebesbotschaft von deiner besonderen Reise"
-              />
-              <!-- Das antwort-Feld wird dynamisch per JavaScript hinzugefügt -->
-              <button type="submit" class="btn">
+              <button id="send-message" class="btn">
                 Senden und Fertigstellen
               </button>
-            </form>
+              <div id="form-feedback" class="form-message"></div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Alternative Screen -->
+      <!-- Alternative Screen für NEIN -->
       <div id="alternative-screen" class="screen">
         <h1>Schade! 😢</h1>
         <p>Du hast dich wirklich gegen mich entschieden...</p>
         <p>Aber ich respektiere deine Entscheidung!</p>
         <p>Falls du es dir anders überlegst, lade die Seite einfach neu.</p>
         <button class="btn" id="returnBtn">Zurück zur Startseite</button>
-      </div>
-
-      <!-- Verstecktes Formular sendet eine E-Mail bei "Nein" -->
-      <div class="hidden-form">
-        <form
-          id="nein-form"
-          action="https://formspree.io/f/manepzdl"
-          method="POST"
-        >
-          <input
-            type="hidden"
-            name="message"
-            value="Die Person hat NEIN gewählt."
-          />
-          <input
-            type="hidden"
-            name="_subject"
-            value="Antwort: NEIN auf deine besondere Frage"
-          />
-          <input type="hidden" name="antwort" value="NEIN" />
-        </form>
-      </div>
-
-      <!-- Verstecktes "Ja"-Formular für verzögerte Benachrichtigung -->
-      <div class="hidden-form">
-        <form
-          id="ja-form"
-          action="https://formspree.io/f/manepzdl"
-          method="POST"
-        >
-          <input
-            type="hidden"
-            name="message"
-            value="Die Person hat JA gewählt! ❤️"
-          />
-          <input
-            type="hidden"
-            name="_subject"
-            value="GUTE NEUIGKEITEN: JA auf deine besondere Frage"
-          />
-          <input type="hidden" name="antwort" value="JA" />
-        </form>
       </div>
     </div>
 
@@ -609,18 +595,135 @@
         "final-screen",
       ];
       let correctAnswers = 0;
-      let userResponse = null; // Speichert die Ja/Nein-Antwort
-      let formSubmitted = false; // Wichtig: Diese Variable fehlte in deinem Code
+      
+      // Formspree endpoint (ersetze dies durch deine eigene Email oder Formspree ID)
+      const formEndpoint = "https://formspree.io/f/manepzdl";
 
-      // Variablen für die mobile Funktionalität
-      let isPageActive = true;
-      let inactivityTimer;
-      let visibilityTimer;
-      const INACTIVITY_TIMEOUT = 60000; // 60 Sekunden Inaktivität
-      const VISIBILITY_CHECK_INTERVAL = 5000; // Prüfe alle 5 Sekunden, ob die Seite sichtbar ist
+      // Speichert die Antwort und den Formularstatus im lokalen Speicher
+      function saveAnswer(answer) {
+        localStorage.setItem("userAnswer", answer);
+        localStorage.setItem("completedQuiz", "true");
+      }
+
+      // Speichert den Formular-Sende-Status
+      function setFormSubmitted() {
+        localStorage.setItem("formSubmitted", "true");
+      }
+
+      // Überprüft, ob das Formular bereits gesendet wurde
+      function isFormAlreadySubmitted() {
+        return localStorage.getItem("formSubmitted") === "true";
+      }
+
+      // Sende Daten im Hintergrund mit AJAX ohne Redirect
+      function sendDataInBackground(data) {
+        // Erstelle einen XHR-Request
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", formEndpoint, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Accept", "application/json");
+        
+        // Bereite Feedback vor
+        const feedbackElement = document.getElementById("form-feedback");
+        const sendButton = document.getElementById("send-message");
+        
+        // Handle die Antwort
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200 || xhr.status === 201) {
+              // Erfolg
+              feedbackElement.textContent = "Deine Nachricht wurde erfolgreich gesendet! ❤️";
+              feedbackElement.className = "form-message form-success";
+              feedbackElement.style.display = "block";
+              
+              // Button deaktivieren
+              sendButton.disabled = true;
+              sendButton.classList.add("btn-disabled");
+              
+              // Als gesendet markieren
+              setFormSubmitted();
+            } else {
+              // Fehler
+              feedbackElement.textContent = "Etwas ist schiefgelaufen. Versuche es später noch einmal.";
+              feedbackElement.className = "form-message form-error";
+              feedbackElement.style.display = "block";
+              
+              // Button wieder aktivieren
+              sendButton.disabled = false;
+            }
+          }
+        };
+        
+        // Sende die Daten
+        xhr.send(JSON.stringify(data));
+      }
+
+      // Bereitet das Formular vor und sendet es
+      function submitFormspreeForm(answer) {
+        // Überprüfe zuerst, ob das Formular bereits gesendet wurde
+        if (isFormAlreadySubmitted()) {
+          console.log(
+            "Formular wurde bereits gesendet. Keine erneute Übermittlung."
+          );
+          return;
+        }
+
+        // Erstelle die Daten, die gesendet werden sollen
+        const data = {
+          antwort: answer,
+          _subject: answer === "JA"
+            ? "GUTE NEUIGKEITEN: JA auf deine besondere Frage"
+            : "Antwort: NEIN auf deine besondere Frage",
+          message: answer === "JA"
+            ? "Die Person hat JA gewählt! ❤️"
+            : "Die Person hat NEIN gewählt."
+        };
+
+        // Sende das Formular im Hintergrund
+        sendDataInBackground(data);
+      }
+
+      // Zeige den richtigen Screen basierend auf der gespeicherten Antwort
+      function checkSavedAnswer() {
+        const savedAnswer = localStorage.getItem("userAnswer");
+        const completedQuiz = localStorage.getItem("completedQuiz");
+
+        if (completedQuiz === "true") {
+          // Das Quiz wurde abgeschlossen
+          updateProgress(100);
+
+          if (savedAnswer === "JA") {
+            // Zeige den JA-Screen
+            showScreen(4); // Final Screen
+            document.getElementById("yesBtn").style.display = "none";
+            document.getElementById("noBtn").style.display = "none";
+            document.getElementById("celebration").style.display = "block";
+            document.getElementById("floating-hearts").style.display = "block";
+            document.getElementById("success-message").style.display = "block";
+            createHearts();
+            createFloatingHearts();
+          } else if (savedAnswer === "NEIN") {
+            // Zeige den NEIN-Screen
+            hideAllScreens();
+            document
+              .getElementById("alternative-screen")
+              .classList.add("active");
+          }
+        }
+      }
+
+      // Versteckt alle Screens
+      function hideAllScreens() {
+        screens.forEach((screenId) => {
+          document.getElementById(screenId).classList.remove("active");
+        });
+      }
 
       // Initialize the game when the document is loaded
       document.addEventListener("DOMContentLoaded", function () {
+        // Überprüfe, ob wir eine gespeicherte Antwort haben
+        checkSavedAnswer();
+
         // Start button event
         document
           .getElementById("start-button")
@@ -658,86 +761,80 @@
             setTimeout(() => {
               showScreen(parseInt(questionNum) + 1);
               updateProgress((parseInt(questionNum) + 1) * 25);
-            }, 4000); // Von 1500 auf 4000 Millisekunden erhöht (4 Sekunden)
+            }, 4000);
           });
         });
 
-        // Yes button event - Speichert die Antwort lokal statt sofort zu senden
+        // "Ja" Button Event
         document
           .getElementById("yesBtn")
           .addEventListener("click", function () {
+            // Speichere Antwort im localStorage
+            saveAnswer("JA");
+
+            // Zeige den Erfolgs-Screen
+            document.getElementById("yesBtn").style.display = "none";
+            document.getElementById("noBtn").style.display = "none";
             document.getElementById("celebration").style.display = "block";
             document.getElementById("floating-hearts").style.display = "block";
             document.getElementById("success-message").style.display = "block";
-            document.getElementById("yesBtn").style.display = "none";
-            document.getElementById("noBtn").style.display = "none";
             createHearts();
             createFloatingHearts();
 
-            // Speichere die Antwort lokal
-            userResponse = "JA";
-
-            // Starte den Inaktivitäts-Timer erst nach der Antwort
-            resetInactivityTimer();
+            // Sende das Formular im Hintergrund (nur wenn es noch nicht gesendet wurde)
+            submitFormspreeForm("JA");
           });
 
-        // No button event - NORMAL, OHNE BEWEGUNG
+        // "Nein" Button Event
         document.getElementById("noBtn").addEventListener("click", function () {
-          // Zeige den alternativen Screen an
-          document.getElementById("final-screen").classList.remove("active");
+          // Speichere Antwort im localStorage
+          saveAnswer("NEIN");
+
+          // Zeige den "Nein"-Screen
+          hideAllScreens();
           document.getElementById("alternative-screen").classList.add("active");
 
-          // Speichere die Antwort lokal
-          userResponse = "NEIN";
-
-          // Starte den Inaktivitäts-Timer erst nach der Antwort
-          resetInactivityTimer();
+          // Sende das Formular im Hintergrund (nur wenn es noch nicht gesendet wurde)
+          submitFormspreeForm("NEIN");
         });
 
         // Zurück zur Startseite Button
         document
           .getElementById("returnBtn")
           .addEventListener("click", function () {
-            if (!formSubmitted && userResponse === "NEIN") {
-              // Sende das Nein-Formular
-              document.getElementById("nein-form").submit();
-              formSubmitted = true;
-            }
-
-            // Optional: Zurück zur Startseite oder Seite neu laden
+            // Lösche nur den Antwort-Status, behalte aber den Formular-Status
+            localStorage.removeItem("userAnswer");
+            localStorage.removeItem("completedQuiz");
             window.location.reload();
           });
 
-        // Modifiziere das Nachrichtenformular-Submit-Event
+        // Behandle das Senden des benutzerdefinierten Formulars
         document
-          .getElementById("messageForm")
-          .addEventListener("submit", function (e) {
-            if (!formSubmitted) {
-              e.preventDefault(); // Verhindere die normale Übermittlung
-
-              // Füge die Ja/Nein-Antwort zum Nachrichtenformular hinzu
-              const hiddenInput = document.createElement("input");
-              hiddenInput.type = "hidden";
-              hiddenInput.name = "antwort";
-              hiddenInput.value = userResponse; // Wird "JA" sein, wenn wir hier sind
-              this.appendChild(hiddenInput);
-
-              // Markiere als abgeschickt
-              formSubmitted = true;
-
-              // Bestätigungsmeldung anzeigen
-              alert("Deine Nachricht wurde mit viel Liebe empfangen! ❤️");
-
-              // Jetzt das Formular regulär absenden
-              this.submit();
+          .getElementById("send-message")
+          .addEventListener("click", function() {
+            // Prüfe, ob das Formular bereits gesendet wurde
+            if (isFormAlreadySubmitted()) {
+              // Zeige Feedback an
+              const feedbackElement = document.getElementById("form-feedback");
+              feedbackElement.textContent = "Deine Nachricht wurde bereits gesendet. Danke! ❤️";
+              feedbackElement.className = "form-message form-success";
+              feedbackElement.style.display = "block";
+              return;
             }
+            
+            // Hole die Nachricht aus dem Textfeld
+            const messageText = document.getElementById("message-text").value;
+            
+            // Erstelle die Daten, die gesendet werden sollen
+            const data = {
+              antwort: "JA",
+              _subject: "Liebesbotschaft von deiner besonderen Reise",
+              message: messageText
+            };
+            
+            // Sende das Formular im Hintergrund
+            sendDataInBackground(data);
           });
-
-        // Überwache Benutzeraktivitäten für mobile Funktionalität
-        document.addEventListener("mousemove", resetInactivityTimer);
-        document.addEventListener("keypress", resetInactivityTimer);
-        document.addEventListener("touchstart", resetInactivityTimer);
-        document.addEventListener("click", resetInactivityTimer);
       });
 
       // Show a specific screen with enhanced animation
@@ -814,7 +911,7 @@
         }
       }
 
-      // Neue Funktion für schwebende Herzen
+      // Funktion für schwebende Herzen
       function createFloatingHearts() {
         const container = document.getElementById("floating-hearts");
 
@@ -839,93 +936,6 @@
           }, i * 300);
         }
       }
-
-      // Funktion zum Senden des Formulars basierend auf der Antwort
-      function sendResponseForm() {
-        if (userResponse && !formSubmitted) {
-          const form =
-            userResponse === "JA"
-              ? document.getElementById("ja-form")
-              : document.getElementById("nein-form");
-
-          // Bei JA-Antwort: Prüfe, ob eine Nachricht eingegeben wurde
-          if (userResponse === "JA") {
-            const messageTextarea = document.querySelector(
-              "#messageForm textarea"
-            );
-            if (messageTextarea && messageTextarea.value.trim()) {
-              // Wenn ja, füge sie zum JA-Formular hinzu
-              const messageInput = document.createElement("input");
-              messageInput.type = "hidden";
-              messageInput.name = "message";
-              messageInput.value =
-                "Die Person hat JA gewählt! ❤️\n\nNachricht: " +
-                messageTextarea.value;
-              form.appendChild(messageInput);
-            }
-          }
-
-          // Sende das Formular ab
-          form.submit();
-          formSubmitted = true;
-          console.log(
-            "Formular wurde wegen Inaktivität/Sichtbarkeit gesendet."
-          );
-        }
-      }
-
-      // Funktion zum Zurücksetzen des Inaktivitäts-Timers
-      function resetInactivityTimer() {
-        if (userResponse && !formSubmitted) {
-          clearTimeout(inactivityTimer);
-          inactivityTimer = setTimeout(() => {
-            console.log("Inaktivitäts-Timeout ausgelöst");
-            sendResponseForm();
-          }, INACTIVITY_TIMEOUT);
-        }
-      }
-
-      // Überwache Sichtbarkeit der Seite
-      document.addEventListener("visibilitychange", function () {
-        if (document.visibilityState === "hidden") {
-          // Seite ist jetzt im Hintergrund (App-Wechsel auf Mobilgeräten)
-          isPageActive = false;
-
-          // Wenn eine Antwort ausgewählt wurde, sende das Formular nach kurzer Verzögerung
-          if (userResponse && !formSubmitted) {
-            clearTimeout(visibilityTimer);
-            visibilityTimer = setTimeout(() => {
-              if (!isPageActive && !formSubmitted) {
-                console.log("Formular wegen Unsichtbarkeit gesendet");
-                sendResponseForm();
-              }
-            }, 3000); // 3 Sekunden, nachdem der Nutzer die App verlassen hat
-          }
-        } else {
-          // Seite ist wieder sichtbar
-          isPageActive = true;
-          clearTimeout(visibilityTimer);
-        }
-      });
-
-      // Regelmäßige Prüfung der Sichtbarkeit (Backup-Methode)
-      setInterval(() => {
-        if (userResponse && !formSubmitted) {
-          if (!document.hasFocus()) {
-            console.log("Regelmäßige Prüfung: Seite ist nicht im Fokus");
-            if (!isPageActive) {
-              sendResponseForm();
-            }
-          }
-        }
-      }, VISIBILITY_CHECK_INTERVAL);
-
-      // Sende Formular beim Schließen der Seite (für Desktop-Geräte)
-      window.addEventListener("beforeunload", function () {
-        if (userResponse && !formSubmitted) {
-          sendResponseForm();
-        }
-      });
     </script>
   </body>
 </html>
