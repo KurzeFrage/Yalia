@@ -440,7 +440,7 @@
           transform: translateX(5px);
         }
       }
-      
+
       .form-message {
         padding: 10px;
         border-radius: 8px;
@@ -448,19 +448,19 @@
         font-weight: bold;
         display: none;
       }
-      
+
       .form-success {
         background-color: #e8f5e9;
         color: #2e7d32;
         border: 1px solid #a5d6a7;
       }
-      
+
       .form-error {
         background-color: #ffebee;
         color: #c62828;
         border: 1px solid #ef9a9a;
       }
-      
+
       .btn-disabled {
         opacity: 0.6;
         cursor: not-allowed;
@@ -493,9 +493,7 @@
             Pizza
           </button>
           <button class="btn btn-option wrong-answer">Sushi</button>
-          <button class="btn btn-option wrong-answer">
-            Pasta
-          </button>
+          <button class="btn btn-option wrong-answer">Pasta</button>
           <button class="btn btn-option wrong-answer">Burger</button>
         </div>
         <p class="hidden-message" id="message1" style="display: none">
@@ -509,9 +507,7 @@
         <p>Wo würde ich am liebsten mit dir hingehen?</p>
         <div class="options">
           <button class="btn btn-option wrong-answer">Kino</button>
-          <button class="btn btn-option wrong-answer">
-            Strand
-          </button>
+          <button class="btn btn-option wrong-answer">Strand</button>
           <button class="btn btn-option wrong-answer">Restaurant</button>
           <button class="btn btn-option correct-answer" data-question="2">
             Berge
@@ -599,7 +595,7 @@
         "final-screen",
       ];
       let correctAnswers = 0;
-      
+
       // Formspree endpoint (ersetze dies durch deine eigene Email oder Formspree ID)
       const formEndpoint = "https://formspree.io/f/manepzdl";
 
@@ -626,38 +622,40 @@
         xhr.open("POST", formEndpoint, true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("Accept", "application/json");
-        
+
         // Bereite Feedback vor
         const feedbackElement = document.getElementById("form-feedback");
         const sendButton = document.getElementById("send-message");
-        
+
         // Handle die Antwort
-        xhr.onreadystatechange = function() {
+        xhr.onreadystatechange = function () {
           if (xhr.readyState === 4) {
             if (xhr.status === 200 || xhr.status === 201) {
               // Erfolg
-              feedbackElement.textContent = "Deine Nachricht wurde erfolgreich gesendet! ❤️";
+              feedbackElement.textContent =
+                "Deine Nachricht wurde erfolgreich gesendet! ❤️";
               feedbackElement.className = "form-message form-success";
               feedbackElement.style.display = "block";
-              
+
               // Button deaktivieren
               sendButton.disabled = true;
               sendButton.classList.add("btn-disabled");
-              
+
               // Als gesendet markieren
               setFormSubmitted();
             } else {
               // Fehler
-              feedbackElement.textContent = "Etwas ist schiefgelaufen. Versuche es später noch einmal.";
+              feedbackElement.textContent =
+                "Etwas ist schiefgelaufen. Versuche es später noch einmal.";
               feedbackElement.className = "form-message form-error";
               feedbackElement.style.display = "block";
-              
+
               // Button wieder aktivieren
               sendButton.disabled = false;
             }
           }
         };
-        
+
         // Sende die Daten
         xhr.send(JSON.stringify(data));
       }
@@ -675,12 +673,14 @@
         // Erstelle die Daten, die gesendet werden sollen
         const data = {
           antwort: answer,
-          _subject: answer === "JA"
-            ? "GUTE NEUIGKEITEN: JA auf deine besondere Frage"
-            : "Antwort: NEIN auf deine besondere Frage",
-          message: answer === "JA"
-            ? "Die Person hat JA gewählt! ❤️"
-            : "Die Person hat NEIN gewählt."
+          _subject:
+            answer === "JA"
+              ? "GUTE NEUIGKEITEN: JA auf deine besondere Frage"
+              : "Antwort: NEIN auf deine besondere Frage",
+          message:
+            answer === "JA"
+              ? "Die Person hat JA gewählt! ❤️"
+              : "Die Person hat NEIN gewählt.",
         };
 
         // Sende das Formular im Hintergrund
@@ -815,27 +815,28 @@
         // Behandle das Senden des benutzerdefinierten Formulars
         document
           .getElementById("send-message")
-          .addEventListener("click", function() {
+          .addEventListener("click", function () {
             // Prüfe, ob das Formular bereits gesendet wurde
             if (isFormAlreadySubmitted()) {
               // Zeige Feedback an
               const feedbackElement = document.getElementById("form-feedback");
-              feedbackElement.textContent = "Deine Nachricht wurde bereits gesendet. Danke! ❤️";
+              feedbackElement.textContent =
+                "Deine Nachricht wurde bereits gesendet. Danke! ❤️";
               feedbackElement.className = "form-message form-success";
               feedbackElement.style.display = "block";
               return;
             }
-            
+
             // Hole die Nachricht aus dem Textfeld
             const messageText = document.getElementById("message-text").value;
-            
+
             // Erstelle die Daten, die gesendet werden sollen
             const data = {
               antwort: "JA",
               _subject: "Liebesbotschaft von deiner besonderen Reise",
-              message: messageText
+              message: messageText,
             };
-            
+
             // Sende das Formular im Hintergrund
             sendDataInBackground(data);
           });
@@ -943,3 +944,4 @@
     </script>
   </body>
 </html>
+
