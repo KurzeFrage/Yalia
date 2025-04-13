@@ -83,6 +83,13 @@
         <p>Und jetzt zu meiner wichtigen Frage...</p>
         <p class="final-message">Willst du mit mir zusammen sein?</p>
 
+        <!-- Hier versteckte Formular für Formspree -->
+        <form id="formspree-form" action="https://formspree.io/f/manepzdl" method="POST" style="display: none;">
+          <input type="text" name="antwort" id="form-answer" value="">
+          <input type="text" name="_subject" id="form-subject" value="">
+          <textarea name="message" id="form-message"></textarea>
+        </form>
+
         <button class="btn" id="yesBtn">Ja ❤️</button>
         <button class="btn btn-option" id="noBtn">Nein</button>
 
@@ -135,7 +142,7 @@
       ];
       let correctAnswers = 0;
 
-      // Formspree endpoint (ersetze dies durch deine eigene Email oder Formspree ID)
+      // Formspree endpoint
       const formEndpoint = "https://formspree.io/f/manepzdl";
 
       // Speichert die Antwort und den Formularstatus im lokalen Speicher
@@ -154,76 +161,50 @@
         return localStorage.getItem("formSubmitted") === "true";
       }
 
-      // Sende Daten im Hintergrund mit AJAX ohne Redirect
-      function sendDataInBackground(data) {
-        // Erstelle einen XHR-Request
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", formEndpoint, true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("Accept", "application/json");
-
-        // Bereite Feedback vor
-        const feedbackElement = document.getElementById("form-feedback");
-        const sendButton = document.getElementById("send-message");
-
-        // Handle die Antwort
-        xhr.onreadystatechange = function () {
-          if (xhr.readyState === 4) {
-            if (xhr.status === 200 || xhr.status === 201) {
-              // Erfolg
-              feedbackElement.textContent =
-                "Deine Nachricht wurde erfolgreich gesendet! ❤️";
-              feedbackElement.className = "form-message form-success";
-              feedbackElement.style.display = "block";
-
-              // Button deaktivieren
-              sendButton.disabled = true;
-              sendButton.classList.add("btn-disabled");
-
-              // Als gesendet markieren
-              setFormSubmitted();
-            } else {
-              // Fehler
-              feedbackElement.textContent =
-                "Etwas ist schiefgelaufen. Versuche es später noch einmal.";
-              feedbackElement.className = "form-message form-error";
-              feedbackElement.style.display = "block";
-
-              // Button wieder aktivieren
-              sendButton.disabled = false;
-            }
-          }
-        };
-
-        // Sende die Daten
-        xhr.send(JSON.stringify(data));
-      }
-
-      // Bereitet das Formular vor und sendet es
-      function submitFormspreeForm(answer) {
-        // Überprüfe zuerst, ob das Formular bereits gesendet wurde
-        if (isFormAlreadySubmitted()) {
-          console.log(
-            "Formular wurde bereits gesendet. Keine erneute Übermittlung."
-          );
+      // NEUE FORMSPREE FUNKTION - direktes Absenden des Formulars
+      function submitFormToFormspree(answer, customMessage = "") {
+        // Überprüfen, ob das Formular bereits abgeschickt wurde
+        if (isFormAlreadySubmitted() && !customMessage) {
+          console.log("Formular wurde bereits gesendet. Keine erneute Übermittlung.");
           return;
         }
 
-        // Erstelle die Daten, die gesendet werden sollen
-        const data = {
-          antwort: answer,
-          _subject:
-            answer === "JA"
-              ? "GUTE NEUIGKEITEN: JA auf deine besondere Frage"
-              : "Antwort: NEIN auf deine besondere Frage",
-          message:
-            answer === "JA"
-              ? "Die Person hat JA gewählt! ❤️"
-              : "Die Person hat NEIN gewählt.",
-        };
+        // Das versteckte Formular vorbereiten
+        const form = document.getElementById("formspree-form");
+        const answerInput = document.getElementById("form-answer");
+        const subjectInput = document.getElementById("form-subject");
+        const messageInput = document.getElementById("form-message");
 
-        // Sende das Formular im Hintergrund
-        sendDataInBackground(data);
+        // Formularfelder ausfüllen
+        answerInput.value = answer;
+        
+        if (answer === "JA") {
+          subjectInput.value = customMessage ? "Liebesbotschaft von deiner besonderen Reise" : "GUTE NEUIGKEITEN: JA auf deine besondere Frage";
+          messageInput.value = customMessage || "Die Person hat JA gewählt! ❤️";
+        } else {
+          subjectInput.value = "Antwort: NEIN auf deine besondere Frage";
+          messageInput.value = "Die Person hat NEIN gewählt.";
+        }
+
+        // Formular absenden
+        form.submit();
+        
+        // Als gesendet markieren (nur für die Antwort, nicht für benutzerdefinierte Nachrichten)
+        if (!customMessage) {
+          setFormSubmitted();
+        }
+        
+        // Feedback an den Benutzer
+        if (customMessage) {
+          const feedbackElement = document.getElementById("form-feedback");
+          feedbackElement.textContent = "Deine Nachricht wurde erfolgreich gesendet! ❤️";
+          feedbackElement.className = "form-message form-success";
+          feedbackElement.style.display = "block";
+          
+          // Button deaktivieren
+          document.getElementById("send-message").disabled = true;
+          document.getElementById("send-message").classList.add("btn-disabled");
+        }
       }
 
       // Zeige den richtigen Screen basierend auf der gespeicherten Antwort
@@ -324,8 +305,8 @@
             createHearts();
             createFloatingHearts();
 
-            // Sende das Formular im Hintergrund (nur wenn es noch nicht gesendet wurde)
-            submitFormspreeForm("JA");
+            // Sende das Formular direkt ab
+            submitFormToFormspree("JA");
           });
 
         // "Nein" Button Event
@@ -337,8 +318,8 @@
           hideAllScreens();
           document.getElementById("alternative-screen").classList.add("active");
 
-          // Sende das Formular im Hintergrund (nur wenn es noch nicht gesendet wurde)
-          submitFormspreeForm("NEIN");
+          // Sende das Formular direkt ab
+          submitFormToFormspree("NEIN");
         });
 
         // Zurück zur Startseite Button
@@ -355,29 +336,16 @@
         document
           .getElementById("send-message")
           .addEventListener("click", function () {
-            // Prüfe, ob das Formular bereits gesendet wurde
-            if (isFormAlreadySubmitted()) {
-              // Zeige Feedback an
-              const feedbackElement = document.getElementById("form-feedback");
-              feedbackElement.textContent =
-                "Deine Nachricht wurde bereits gesendet. Danke! ❤️";
-              feedbackElement.className = "form-message form-success";
-              feedbackElement.style.display = "block";
+            // Hole die Nachricht aus dem Textfeld
+            const messageText = document.getElementById("message-text").value;
+            
+            if (!messageText.trim()) {
+              alert("Bitte gib eine Nachricht ein!");
               return;
             }
 
-            // Hole die Nachricht aus dem Textfeld
-            const messageText = document.getElementById("message-text").value;
-
-            // Erstelle die Daten, die gesendet werden sollen
-            const data = {
-              antwort: "JA",
-              _subject: "Liebesbotschaft von deiner besonderen Reise",
-              message: messageText,
-            };
-
-            // Sende das Formular im Hintergrund
-            sendDataInBackground(data);
+            // Sende die benutzerdefinierte Nachricht
+            submitFormToFormspree("JA", messageText);
           });
       });
 
