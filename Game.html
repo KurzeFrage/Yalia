@@ -83,11 +83,13 @@
         <p>Und jetzt zu meiner wichtigen Frage...</p>
         <p class="final-message">Willst du mit mir zusammen sein?</p>
 
-        <!-- Hier versteckte Formular für Formspree -->
+        <!-- Hier verstecktes Formular für Formspree -->
         <form id="formspree-form" action="https://formspree.io/f/manepzdl" method="POST" style="display: none;">
           <input type="text" name="antwort" id="form-answer" value="">
           <input type="text" name="_subject" id="form-subject" value="">
           <textarea name="message" id="form-message"></textarea>
+          <input type="text" name="quizDauer" id="form-quiz-time" value="">
+          <input type="text" name="ipAdresse" id="form-ip-address" value="">
         </form>
 
         <button class="btn" id="yesBtn">Ja ❤️</button>
@@ -141,9 +143,47 @@
         "final-screen",
       ];
       let correctAnswers = 0;
+      
+      // Timer-Variablen
+      let startTime;
+      let quizDuration;
+      let userIpAddress = "Wird geladen...";
 
       // Formspree endpoint
       const formEndpoint = "https://formspree.io/f/manepzdl";
+
+      // IP-Adresse abrufen (mit öffentlichem API-Service)
+      async function fetchIpAddress() {
+        try {
+          const response = await fetch('https://api.ipify.org?format=json');
+          const data = await response.json();
+          userIpAddress = data.ip;
+          console.log("IP-Adresse erfasst:", userIpAddress);
+        } catch (error) {
+          console.error("Fehler beim Abrufen der IP-Adresse:", error);
+          userIpAddress = "Konnte nicht ermittelt werden";
+        }
+      }
+
+      // Startet den Timer
+      function startTimer() {
+        startTime = new Date();
+        console.log("Timer gestartet:", startTime);
+      }
+
+      // Beendet den Timer und berechnet die Dauer
+      function endTimer() {
+        const endTime = new Date();
+        const durationMs = endTime - startTime;
+        
+        // Umrechnung in Minuten und Sekunden
+        const minutes = Math.floor(durationMs / 60000);
+        const seconds = Math.floor((durationMs % 60000) / 1000);
+        
+        quizDuration = minutes + " Minuten und " + seconds + " Sekunden";
+        console.log("Quiz-Dauer:", quizDuration);
+        return quizDuration;
+      }
 
       // Speichert die Antwort und den Formularstatus im lokalen Speicher
       function saveAnswer(answer) {
@@ -161,7 +201,7 @@
         return localStorage.getItem("formSubmitted") === "true";
       }
 
-      // NEUE FORMSPREE FUNKTION - direktes Absenden des Formulars
+      // FORMSPREE FUNKTION - direktes Absenden des Formulars mit Timer und IP
       function submitFormToFormspree(answer, customMessage = "") {
         // Überprüfen, ob das Formular bereits abgeschickt wurde
         if (isFormAlreadySubmitted() && !customMessage) {
@@ -169,21 +209,30 @@
           return;
         }
 
+        // Timer beenden, wenn es die Hauptantwort ist (nicht die benutzerdefinierte Nachricht)
+        if (!customMessage) {
+          endTimer();
+        }
+
         // Das versteckte Formular vorbereiten
         const form = document.getElementById("formspree-form");
         const answerInput = document.getElementById("form-answer");
         const subjectInput = document.getElementById("form-subject");
         const messageInput = document.getElementById("form-message");
+        const quizTimeInput = document.getElementById("form-quiz-time");
+        const ipAddressInput = document.getElementById("form-ip-address");
 
         // Formularfelder ausfüllen
         answerInput.value = answer;
+        quizTimeInput.value = quizDuration || "Nicht verfügbar";
+        ipAddressInput.value = userIpAddress;
         
         if (answer === "JA") {
           subjectInput.value = customMessage ? "Liebesbotschaft von deiner besonderen Reise" : "GUTE NEUIGKEITEN: JA auf deine besondere Frage";
-          messageInput.value = customMessage || "Die Person hat JA gewählt! ❤️";
+          messageInput.value = customMessage || `Die Person hat JA gewählt! ❤️\nDauer: ${quizDuration}\nIP: ${userIpAddress}`;
         } else {
           subjectInput.value = "Antwort: NEIN auf deine besondere Frage";
-          messageInput.value = "Die Person hat NEIN gewählt.";
+          messageInput.value = `Die Person hat NEIN gewählt.\nDauer: ${quizDuration}\nIP: ${userIpAddress}`;
         }
 
         // Formular absenden
@@ -245,6 +294,9 @@
 
       // Initialize the game when the document is loaded
       document.addEventListener("DOMContentLoaded", function () {
+        // IP-Adresse abrufen
+        fetchIpAddress();
+        
         // Überprüfe, ob wir eine gespeicherte Antwort haben
         checkSavedAnswer();
 
@@ -252,6 +304,9 @@
         document
           .getElementById("start-button")
           .addEventListener("click", function () {
+            // Timer starten
+            startTimer();
+            
             showScreen(1);
             updateProgress(25);
           });
